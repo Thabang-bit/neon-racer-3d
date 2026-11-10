@@ -305,7 +305,6 @@ for (let i = 0; i < 35; i++) {
   createBuilding(12 + Math.random() * 5, z);
 }
 
-
  // ------------------------------------
  // STREETLIGHTS - FUTURISTIC LIGHTING
  // ------------------------------------
@@ -383,7 +382,6 @@ for (let i = 0; i < 20; i++) {
   createStreetLight(-8.2, -i * 14);
   createStreetLight(8.2, -i * 14);
 }
-
 
 // ------------------------------------
 // SPORTS CAR CREATOR
@@ -751,6 +749,15 @@ let spawnTimer = 0;
 
 const keys = {};
 
+// NITRO SYSTEM
+let nitro = 100;
+let nitroActive = false;
+let nitroCooldown = false;
+
+const NITRO_POWER = 1.8;
+const NITRO_DRAIN = 35;
+const NITRO_RECHARGE = 18;
+
 window.addEventListener('keydown', event => {
   keys[event.key.toLowerCase()] = true;
 
@@ -829,18 +836,36 @@ function animate() {
   const time = clock.elapsedTime;
 
   if (running) {
-    // Acceleration and braking
-    if (keys['w'] || keys['arrowup']) {
-      speed += 30 * delta;
-    } else {
-      speed -= 12 * delta;
-    }
 
-    if (keys['s'] || keys['arrowdown']) {
-      speed -= 45 * delta;
-    }
+  // ACCELERATION AND BRAKING
+  if (keys['w'] || keys['arrowup']) {
+    speed += 30 * delta;
+  } else {
+    speed -= 12 * delta;
+  }
 
-    speed = THREE.MathUtils.clamp(speed, 0, 220);
+  if (keys['s'] || keys['arrowdown']) {
+    speed -= 45 * delta;
+  }
+
+  // NITRO BOOST
+  nitroActive = keys['shift'] && nitro > 0 && speed > 20;
+
+  if (nitroActive) {
+    speed += 75 * delta;
+    nitro -= NITRO_DRAIN * delta;
+  } else {
+    nitro += NITRO_RECHARGE * delta;
+  }
+
+  nitro = THREE.MathUtils.clamp(nitro, 0, 100);
+
+  speed = THREE.MathUtils.clamp(
+    speed,
+    0,
+    nitroActive ? 280 : 220
+  );
+
 
     // Steering
     steering = 0;
@@ -897,9 +922,13 @@ function animate() {
 
       if (item.z > 12) item.z -= 280;
 
-      item.pole.position.z = item.z;
-      item.lamp.position.z = item.z;
-      item.glow.position.z = item.z;
+    item.pole.position.z = item.z;
+    item.lamp.position.z = item.z;
+    item.glow.position.z = item.z;
+
+    if (item.warning) {
+      item.warning.position.z = item.z;
+    }
     });
 
     // Spawn traffic
