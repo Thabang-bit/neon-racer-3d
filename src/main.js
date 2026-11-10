@@ -826,6 +826,76 @@ window.addEventListener('keyup', event => {
   keys[event.key.toLowerCase()] = false;
 });
 
+
+// ------------------------------------
+// AUDIO SYSTEM
+// ------------------------------------
+
+let audioContext;
+let masterVolume;
+
+let engineOscillator;
+let engineGain;
+
+let nitroOscillator;
+let nitroGain;
+
+let screechOscillator;
+let screechGain;
+
+function initAudio() {
+  // Create audio only once
+  if (audioContext) {
+    audioContext.resume();
+    return;
+  }
+
+  audioContext = new (
+    window.AudioContext || window.webkitAudioContext
+  )();
+
+  masterVolume = audioContext.createGain();
+  masterVolume.gain.value = 0.35;
+  masterVolume.connect(audioContext.destination);
+
+  // ENGINE SOUND
+  engineOscillator = audioContext.createOscillator();
+  engineGain = audioContext.createGain();
+
+  engineOscillator.type = 'sawtooth';
+  engineOscillator.frequency.value = 55;
+  engineGain.gain.value = 0;
+
+  engineOscillator.connect(engineGain);
+  engineGain.connect(masterVolume);
+  engineOscillator.start();
+
+  // NITRO SOUND
+  nitroOscillator = audioContext.createOscillator();
+  nitroGain = audioContext.createGain();
+
+  nitroOscillator.type = 'square';
+  nitroOscillator.frequency.value = 100;
+  nitroGain.gain.value = 0;
+
+  nitroOscillator.connect(nitroGain);
+  nitroGain.connect(masterVolume);
+  nitroOscillator.start();
+
+  // TYRE SCREECH SOUND
+  screechOscillator = audioContext.createOscillator();
+  screechGain = audioContext.createGain();
+
+  screechOscillator.type = 'sawtooth';
+  screechOscillator.frequency.value = 900;
+  screechGain.gain.value = 0;
+
+  screechOscillator.connect(screechGain);
+  screechGain.connect(masterVolume);
+  screechOscillator.start();
+}
+
+
 // ------------------------------------
 // GAME START / RESTART
 // ------------------------------------
