@@ -692,6 +692,31 @@ function createCar(color, isPlayer = false) {
 const playerData = createCar(0x075bff, true);
 const player = playerData.car;
 
+// NITRO FLAMES
+const nitroFlames = new THREE.Group();
+
+for (const side of [-1, 1]) {
+  const flame = new THREE.Mesh(
+    new THREE.ConeGeometry(0.16, 1.1, 12),
+    new THREE.MeshBasicMaterial({
+      color: 0x00cfff,
+      transparent: true,
+      opacity: 0.9
+    })
+  );
+
+  flame.rotation.x = Math.PI / 2;
+  flame.position.set(side * 0.48, 0.35, 2.65);
+  nitroFlames.add(flame);
+}
+
+nitroFlames.visible = false;
+player.add(nitroFlames);
+
+// NITRO HUD
+const nitroFill = document.getElementById('nitro-fill');
+const nitroValue = document.getElementById('nitro-value');
+
 player.position.set(0, 0, 4);
 scene.add(player);
 
@@ -859,6 +884,21 @@ function animate() {
   }
 
   nitro = THREE.MathUtils.clamp(nitro, 0, 100);
+
+    // UPDATE NITRO DISPLAY
+  nitroFill.style.width = `${nitro}%`;
+  nitroValue.textContent = `${Math.floor(nitro)}%`;
+
+  // SHOW FLAMES DURING BOOST
+  nitroFlames.visible = nitroActive;
+
+  // Animate flames
+  if (nitroActive) {
+    const flameSize = 0.85 + Math.random() * 0.4;
+    nitroFlames.scale.setScalar(flameSize);
+  } else {
+    nitroFlames.scale.setScalar(1);
+  }
 
   speed = THREE.MathUtils.clamp(
     speed,
