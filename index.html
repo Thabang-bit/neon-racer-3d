@@ -1,0 +1,60 @@
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#050510" />
+    <title>NEON RACER 3D</title>
+  </head>
+  <body>
+    <div id="game">
+      <div class="top-bar">
+        <div class="brand">NEON<span>RACER</span></div>
+        <div class="status">● SYSTEM ONLINE</div>
+      </div>
+
+      <div class="hud">
+        <div class="hud-card">
+          <small>SPEED</small>
+          <div><span id="speed">0</span><small> KM/H</small></div>
+        </div>
+        <div class="hud-card">
+          <small>DISTANCE</small>
+          <div><span id="distance">0</span><small> M</small></div>
+        </div>
+        <div class="hud-card">
+          <small>SCORE</small>
+          <div id="score">0</div>
+        </div>
+      </div>
+
+      <div id="start-screen" class="screen">
+        <div class="menu-content">
+          <p class="eyebrow">THE CITY NEVER SLEEPS</p>
+          <h1>NEON<br /><span>RACER</span></h1>
+          <p class="subtitle">OWN THE NIGHT. RULE THE ROAD.</p>
+          <button id="start-button">START ENGINE</button>
+          <p class="instructions">W / ↑ ACCELERATE &nbsp; A / D STEER</p>
+        </div>
+      </div>
+
+      <div id="game-over" class="screen hidden">
+        <div class="menu-content">
+          <p class="eyebrow">RACE TERMINATED</p>
+          <h1>GAME<br /><span>OVER</span></h1>
+          <p class="subtitle">YOUR SCORE: <span id="final-score">0</span></p>
+          <button id="restart-button">RACE AGAIN</button>
+        </div>
+      </div>
+
+      <div class="bottom-hint">
+        <span>W / ↑ ACCELERATE</span>
+        <span>A / D STEER</span>
+        <span>S / ↓ BRAKE</span>
+      </div>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
