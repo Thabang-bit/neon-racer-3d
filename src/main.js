@@ -305,40 +305,85 @@ for (let i = 0; i < 35; i++) {
   createBuilding(12 + Math.random() * 5, z);
 }
 
-// ------------------------------------
-// STREETLIGHTS
-// ------------------------------------
+
+ // ------------------------------------
+ // STREETLIGHTS - FUTURISTIC LIGHTING
+ // ------------------------------------
 
 const streetLights = [];
 
 function createStreetLight(x, z) {
+  const poleMaterial = new THREE.MeshStandardMaterial({
+    color: 0x303b55,
+    metalness: 0.85,
+    roughness: 0.25
+  });
+
+  // Main pole
   const pole = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.06, 0.09, 6, 8),
-    new THREE.MeshStandardMaterial({ color: 0x555c78 })
+    new THREE.CylinderGeometry(0.07, 0.11, 6, 12),
+    poleMaterial
   );
 
   pole.position.set(x, 3, z);
+  pole.castShadow = true;
   scene.add(pole);
 
-  const lamp = new THREE.Mesh(
-    new THREE.SphereGeometry(0.22, 12, 12),
-    lineMaterial
+  // Curved-looking lamp arm
+  const arm = new THREE.Mesh(
+    new THREE.BoxGeometry(1.1, 0.08, 0.08),
+    poleMaterial
   );
 
-  lamp.position.set(x, 6, z);
+  arm.position.set(x + (x < 0 ? 0.45 : -0.45), 5.85, z);
+  scene.add(arm);
+
+  // Neon lamp housing
+  const lamp = new THREE.Mesh(
+    new THREE.BoxGeometry(0.8, 0.12, 0.32),
+    new THREE.MeshBasicMaterial({
+      color: 0x00eaff
+    })
+  );
+
+  lamp.position.set(x + (x < 0 ? 0.9 : -0.9), 5.75, z);
   scene.add(lamp);
 
-  const glow = new THREE.PointLight(0x00bbff, 18, 12);
-  glow.position.set(x, 5.8, z);
+  // Lamp glow
+  const glow = new THREE.PointLight(0x00bbff, 25, 16);
+  glow.position.set(
+    x + (x < 0 ? 0.9 : -0.9),
+    5.5,
+    z
+  );
+
   scene.add(glow);
 
-  streetLights.push({ pole, lamp, glow, z });
+  // Small pink warning light on pole
+  const warning = new THREE.Mesh(
+    new THREE.SphereGeometry(0.09, 10, 10),
+    new THREE.MeshBasicMaterial({
+      color: 0xff168c
+    })
+  );
+
+  warning.position.set(x, 5.1, z);
+  scene.add(warning);
+
+  streetLights.push({
+    pole,
+    lamp,
+    glow,
+    warning,
+    z
+  });
 }
 
 for (let i = 0; i < 20; i++) {
   createStreetLight(-8.2, -i * 14);
   createStreetLight(8.2, -i * 14);
 }
+
 
 // ------------------------------------
 // SPORTS CAR CREATOR
