@@ -167,9 +167,6 @@ for (const x of [-2.5, 2.5]) {
 }
 
 
-// ------------------------------------
-// CITY BUILDINGS
-// ------------------------------------
 
 const buildings = [];
 
@@ -178,11 +175,25 @@ function createBuilding(x, z) {
   const width = 3 + Math.random() * 5;
   const depth = 4 + Math.random() * 5;
 
+  const buildingColors = [
+    0x10152b,
+    0x15152e,
+    0x101d35,
+    0x20132c,
+    0x111c29
+  ];
+
+  const buildingMaterial = new THREE.MeshStandardMaterial({
+    color: buildingColors[
+      Math.floor(Math.random() * buildingColors.length)
+    ],
+    metalness: 0.55,
+    roughness: 0.38
+  });
+
   const building = new THREE.Mesh(
     new THREE.BoxGeometry(width, height, depth),
-    buildingMaterials[
-      Math.floor(Math.random() * buildingMaterials.length)
-    ]
+    buildingMaterial
   );
 
   building.position.set(x, height / 2, z);
@@ -190,32 +201,99 @@ function createBuilding(x, z) {
   building.receiveShadow = true;
   scene.add(building);
 
-  // Neon roof outline
+  // Neon rooftop outline
+  const roofMaterial = Math.random() > 0.5
+    ? lineMaterial
+    : pinkMaterial;
+
   const roof = new THREE.Mesh(
-    new THREE.BoxGeometry(width + 0.12, 0.12, depth + 0.12),
-    Math.random() > 0.5 ? lineMaterial : pinkMaterial
+    new THREE.BoxGeometry(width + 0.18, 0.1, depth + 0.18),
+    roofMaterial
   );
 
   roof.position.set(x, height, z);
   scene.add(roof);
 
-  // Random glowing windows
-  for (let i = 0; i < 8; i++) {
-    const windowLight = new THREE.Mesh(
-      new THREE.BoxGeometry(0.35, 0.45, 0.06),
-      Math.random() > 0.5
-        ? lineMaterial
-        : new THREE.MeshBasicMaterial({ color: 0xffbb55 })
-    );
+  // Glowing windows on the front
+  const windowColors = [
+    0x00eaff,
+    0xff33aa,
+    0xffbb55,
+    0x7c5cff
+  ];
 
-    windowLight.position.set(
-      x + (Math.random() - 0.5) * width * 0.7,
-      1.5 + Math.random() * (height - 3),
-      z + depth / 2 + 0.04
-    );
+  const columns = Math.max(2, Math.floor(width / 0.8));
+  const rows = Math.max(2, Math.floor(height / 2.2));
 
-    scene.add(windowLight);
+  for (let row = 0; row < rows; row++) {
+    for (let col = 0; col < columns; col++) {
+      if (Math.random() > 0.72) continue;
+
+      const windowColor =
+        windowColors[Math.floor(Math.random() * windowColors.length)];
+
+      const windowLight = new THREE.Mesh(
+        new THREE.BoxGeometry(0.3, 0.48, 0.055),
+        new THREE.MeshBasicMaterial({
+          color: windowColor
+        })
+      );
+
+      const windowX =
+        x - width / 2 + ((col + 1) * width) / (columns + 1);
+
+      const windowY = 1.5 + row * 1.8;
+
+      windowLight.position.set(
+        windowX,
+        windowY,
+        z + depth / 2 + 0.04
+      );
+
+      scene.add(windowLight);
+    }
   }
+
+  // Neon vertical building strips
+  for (const side of [-1, 1]) {
+    const strip = new THREE.Mesh(
+      new THREE.BoxGeometry(0.045, height * 0.85, 0.05),
+      new THREE.MeshBasicMaterial({
+        color: side === -1 ? 0x00eaff : 0xff00aa
+      })
+    );
+
+    strip.position.set(
+      x + side * (width / 2 - 0.12),
+      height / 2,
+      z + depth / 2 + 0.06
+    );
+
+    scene.add(strip);
+  }
+
+  // Rooftop antenna
+  const antenna = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.025, 0.04, 2, 6),
+    new THREE.MeshStandardMaterial({
+      color: 0x8995aa,
+      metalness: 0.8
+    })
+  );
+
+  antenna.position.set(x, height + 1, z);
+  scene.add(antenna);
+
+  // Antenna warning light
+  const warningLight = new THREE.Mesh(
+    new THREE.SphereGeometry(0.1, 8, 8),
+    new THREE.MeshBasicMaterial({
+      color: 0xff2255
+    })
+  );
+
+  warningLight.position.set(x, height + 2.05, z);
+  scene.add(warningLight);
 
   buildings.push({ building, roof, z });
 }
