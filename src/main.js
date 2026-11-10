@@ -713,6 +713,37 @@ for (const side of [-1, 1]) {
 nitroFlames.visible = false;
 player.add(nitroFlames);
 
+
+  // BLUE NITRO GLOW
+  const nitroGlow = new THREE.PointLight(0x00aaff, 0, 9);
+  nitroGlow.position.set(0, 0.55, 2.6);
+  player.add(nitroGlow);
+
+  // NEON SPEED STREAKS
+  const speedStreaks = [];
+
+  for (let i = 0; i < 16; i++) {
+    const streak = new THREE.Mesh(
+      new THREE.BoxGeometry(0.025, 0.025, 2 + Math.random() * 2),
+      new THREE.MeshBasicMaterial({
+        color: i % 2 === 0 ? 0x00eaff : 0x4488ff,
+        transparent: true,
+        opacity: 0.65
+      })
+    );
+
+    streak.position.set(
+      (Math.random() - 0.5) * 14,
+      0.5 + Math.random() * 4,
+      -Math.random() * 40
+    );
+
+    streak.visible = false;
+    scene.add(streak);
+    speedStreaks.push(streak);
+  }
+
+
 // NITRO HUD
 const nitroFill = document.getElementById('nitro-fill');
 const nitroValue = document.getElementById('nitro-value');
@@ -892,6 +923,27 @@ function animate() {
   // SHOW FLAMES DURING BOOST
   nitroFlames.visible = nitroActive;
 
+
+  // NITRO GLOW
+  nitroGlow.intensity = nitroActive ? 35 : 0;
+
+  // SPEED STREAK EFFECT
+  speedStreaks.forEach(streak => {
+    streak.visible = nitroActive;
+
+    if (nitroActive) {
+      streak.position.z += speed * delta * 0.25;
+
+      if (streak.position.z > 8) {
+        streak.position.z = -30 - Math.random() * 20;
+        streak.position.x = player.position.x +
+          (Math.random() - 0.5) * 14;
+        streak.position.y = 0.5 + Math.random() * 4;
+      }
+    }
+  });
+
+
   // Animate flames
   if (nitroActive) {
     const flameSize = 0.85 + Math.random() * 0.4;
@@ -1011,23 +1063,30 @@ function animate() {
     scoreElement.textContent = Math.floor(score);
   }
 
-  // Camera follows player
-  camera.position.x = THREE.MathUtils.damp(
-    camera.position.x,
-    player.position.x * 0.55,
-    3,
-    delta
-  );
+    // Camera follows player
+    camera.position.x = THREE.MathUtils.damp(
+      camera.position.x,
+      player.position.x * 0.55,
+      3,
+      delta
+    );
 
-  camera.position.y = 5 + Math.sin(time * 2) * 0.025;
-  camera.position.z = 11;
+    camera.position.y =
+    5 +
+    Math.sin(time * 2) * 0.025 +
+    (nitroActive ? Math.sin(time * 55) * 0.06 : 0);
 
-  camera.lookAt(player.position.x * 0.35, 0.8, -8);
+  camera.position.x += nitroActive
+    ? Math.sin(time * 45) * 0.035
+    : 0;
+    camera.position.z = 11;
 
-  renderer.render(scene, camera);
-}
+    camera.lookAt(player.position.x * 0.35, 0.8, -8);
 
-animate();
+    renderer.render(scene, camera);
+  }
+
+  animate();
 
 // ------------------------------------
 // WINDOW RESIZE
