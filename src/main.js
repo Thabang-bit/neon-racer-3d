@@ -77,12 +77,16 @@ const buildingMaterials = [
 }));
 
 // ------------------------------------
-// ROAD
+// ROAD - NEON HIGHWAY
 // ------------------------------------
 
 const road = new THREE.Mesh(
   new THREE.PlaneGeometry(15, 240),
-  roadMaterial
+  new THREE.MeshStandardMaterial({
+    color: 0x090d19,
+    roughness: 0.32,
+    metalness: 0.65
+  })
 );
 
 road.rotation.x = -Math.PI / 2;
@@ -90,15 +94,58 @@ road.position.z = -85;
 road.receiveShadow = true;
 scene.add(road);
 
-// Road edges
-for (const x of [-7.35, 7.35]) {
-  const edge = new THREE.Mesh(
-    new THREE.BoxGeometry(0.12, 0.04, 240),
-    lineMaterial
+// Road shoulder strips
+for (const side of [-1, 1]) {
+  const shoulder = new THREE.Mesh(
+    new THREE.BoxGeometry(0.65, 0.035, 240),
+    new THREE.MeshStandardMaterial({
+      color: 0x10182a,
+      metalness: 0.5,
+      roughness: 0.4
+    })
   );
 
-  edge.position.set(x, 0.04, -85);
+  shoulder.position.set(side * 7.15, 0.015, -85);
+  scene.add(shoulder);
+}
+
+// Neon road edges
+for (const side of [-1, 1]) {
+  const edge = new THREE.Mesh(
+    new THREE.BoxGeometry(0.1, 0.06, 240),
+    new THREE.MeshBasicMaterial({
+      color: side === -1 ? 0x00eaff : 0xff00aa
+    })
+  );
+
+  edge.position.set(side * 7.35, 0.055, -85);
   scene.add(edge);
+
+  // Inner road glow
+  const innerGlow = new THREE.Mesh(
+    new THREE.BoxGeometry(0.035, 0.025, 240),
+    new THREE.MeshBasicMaterial({
+      color: side === -1 ? 0x0077ff : 0xff2266
+    })
+  );
+
+  innerGlow.position.set(side * 6.95, 0.045, -85);
+  scene.add(innerGlow);
+}
+
+// Roadside reflective markings
+for (const side of [-1, 1]) {
+  for (let i = 0; i < 60; i++) {
+    const marker = new THREE.Mesh(
+      new THREE.BoxGeometry(0.08, 0.025, 1.2),
+      new THREE.MeshBasicMaterial({
+        color: 0x8799b8
+      })
+    );
+
+    marker.position.set(side * 6.4, 0.035, -i * 4);
+    scene.add(marker);
+  }
 }
 
 // Lane markings
@@ -108,7 +155,9 @@ for (const x of [-2.5, 2.5]) {
   for (let i = 0; i < 30; i++) {
     const marker = new THREE.Mesh(
       new THREE.BoxGeometry(0.07, 0.025, 2.5),
-      new THREE.MeshBasicMaterial({ color: 0xd6e7ff })
+      new THREE.MeshBasicMaterial({
+        color: 0xd6e7ff
+      })
     );
 
     marker.position.set(x, 0.035, -i * 8);
@@ -116,6 +165,7 @@ for (const x of [-2.5, 2.5]) {
     laneMarkers.push(marker);
   }
 }
+
 
 // ------------------------------------
 // CITY BUILDINGS
