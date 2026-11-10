@@ -893,6 +893,19 @@ function initAudio() {
   screechOscillator.connect(screechGain);
   screechGain.connect(masterVolume);
   screechOscillator.start();
+
+  // COLLISION SOUND
+  const crashOscillator = audioContext.createOscillator();
+  const crashGain = audioContext.createGain();
+
+  crashOscillator.type = 'sawtooth';
+  crashOscillator.frequency.value = 75;
+  crashGain.gain.value = 0;
+
+  crashOscillator.connect(crashGain);
+  crashGain.connect(masterVolume);
+  crashOscillator.start();
+
 }
 
 
@@ -901,6 +914,8 @@ function initAudio() {
 // ------------------------------------
 
 function startGame() {
+  initAudio();
+
   traffic.forEach(item => scene.remove(item.car));
   traffic.length = 0;
 
@@ -922,6 +937,17 @@ function startGame() {
 
 function endGame() {
   running = false;
+  // PLAY COLLISION SOUND
+  if (audioContext) {
+    const now = audioContext.currentTime;
+
+    crashOscillator.frequency.setValueAtTime(110, now);
+    crashOscillator.frequency.exponentialRampToValueAtTime(35, now + 0.35);
+
+    crashGain.gain.cancelScheduledValues(now);
+    crashGain.gain.setValueAtTime(0.25, now);
+    crashGain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+  }
 
   document.querySelector('#final-score').textContent =
     Math.floor(score);
@@ -1034,6 +1060,51 @@ function animate() {
 
     if (keys['a'] || keys['arrowleft']) steering = -1;
     if (keys['d'] || keys['arrowright']) steering = 1;
+
+    // ------------------------------------
+    // UPDATE RACING SOUNDS
+    // ------------------------------------
+
+    if (audioContext) {
+      const audioTime = audioContext.currentTime;
+
+      // ENGINE SOUND: increases with speed
+      engineOscillator.frequency.setTargetAtTime(
+        45 + speed * 1.4,
+        audioTime,
+        0.08
+      );
+
+      engineGain.gain.setTargetAtTime(
+        speed > 0 ? 0.025 + speed * 0.00035 : 0,
+        audioTime,
+        0.1
+      );
+
+      // NITRO SOUND: activates during boost
+      nitroOscillator.frequency.setTargetAtTime(
+        nitroActive ? 180 + speed * 2 : 100,
+        audioTime,
+        0.06
+      );
+
+      nitroGain.gain.setTargetAtTime(
+        nitroActive ? 0.055 : 0,
+        audioTime,
+        0.08
+      );
+
+      // TYRE SCREECH: activates during hard steering
+      const screechAmount =
+        Math.abs(steering) * (speed / 220);
+
+      screechGain.gain.setTargetAtTime(
+        screechAmount > 0.2 ? screechAmount * 0.045 : 0,
+        audioTime,
+        0.06
+      );
+    }
+
 
     playerX += steering * delta * (3 + speed / 30);
     playerX = THREE.MathUtils.clamp(playerX, -5.3, 5.3);
