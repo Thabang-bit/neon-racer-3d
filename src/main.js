@@ -881,6 +881,7 @@ const nitroValue = document.getElementById('nitro-value');
 player.position.set(0, 0, 4);
 scene.add(player);
 
+
 // ------------------------------------
 // TRAFFIC
 // ------------------------------------
@@ -1075,6 +1076,9 @@ nitroValue.textContent = '100%';
 
   player.position.set(0, 0, 4);
   player.rotation.set(0, 0, 0);
+  // RESET DRIFT PHYSICS
+  playerX = 0;
+  lateralVelocity = 0;
 
   running = true;
 
@@ -1301,7 +1305,18 @@ steering *= steeringPower;
     }
 
 
-    playerX += steering * delta * (3 + speed / 30);
+    // REALISTIC SIDEWAYS DRIFT
+    const speedRatio = THREE.MathUtils.clamp(speed / 220, 0, 1);
+
+    // Steering creates sideways momentum
+    lateralVelocity += steering * (3 + speed / 30) * delta;
+
+    // High-speed drift effect
+    lateralVelocity *= 1 - (0.8 - speedRatio * 0.25) * delta * 5;
+
+    // Move car sideways
+    playerX += lateralVelocity * delta;
+
     playerX = THREE.MathUtils.clamp(playerX, -5.3, 5.3);
 
     player.position.x = THREE.MathUtils.damp(
