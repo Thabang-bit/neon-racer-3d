@@ -1294,6 +1294,29 @@ nitroValue.textContent = nitroCooldown
       8,
       delta
     );
+    // REALISTIC CAR BODY ROLL
+    const bodyRoll = -steering * 0.045;
+
+    player.rotation.z = THREE.MathUtils.damp(
+      player.rotation.z,
+      bodyRoll,
+      4,
+      delta
+    );
+    // REALISTIC CAR SUSPENSION
+    const suspensionBounce = Math.sin(time * 12) * 0.018 * (speed / 220);
+
+    player.position.y = suspensionBounce;
+
+    // Car body movement when accelerating
+    const accelerationLean = keys['w'] || keys['arrowup'] ? -0.025 : 0;
+
+    player.rotation.x = THREE.MathUtils.damp(
+      player.rotation.x,
+      accelerationLean + suspensionBounce * 0.4,
+      5,
+      delta
+    );
 
     // REALISTIC WHEEL MOVEMENT
     playerData.wheels.forEach(wheel => {
