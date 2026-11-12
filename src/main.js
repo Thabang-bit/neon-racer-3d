@@ -930,6 +930,8 @@ let speed = 0;
 let distance = 0;
 let score = 0;
 let playerX = 0;
+// REALISTIC SIDEWAYS DRIFT
+let lateralVelocity = 0;
 let steering = 0;
 let spawnTimer = 0;
 
@@ -1134,16 +1136,26 @@ function animate() {
 
   if (running) {
 
-  // ACCELERATION AND BRAKING
-  if (keys['w'] || keys['arrowup']) {
-    speed += 30 * delta;
-  } else {
-    speed -= 12 * delta;
-  }
+// REALISTIC ACCELERATION AND BRAKING
+const accelerating = keys['w'] || keys['arrowup'];
+const braking = keys['s'] || keys['arrowdown'];
 
-  if (keys['s'] || keys['arrowdown']) {
-    speed -= 45 * delta;
-  }
+if (accelerating) {
+  speed += 42 * delta;
+} else {
+  // Natural engine drag
+  speed -= 8 * delta;
+}
+
+if (braking) {
+  speed -= 65 * delta;
+}
+
+// Prevent negative speed
+speed = Math.max(0, speed);
+
+// Maximum normal speed
+speed = Math.min(speed, 220);
 
 // NITRO BOOST
 nitroActive =
@@ -1227,11 +1239,22 @@ nitroValue.textContent = nitroCooldown
   );
 
 
-    // Steering
+    // REALISTIC SPEED-DEPENDENT STEERING
     steering = 0;
 
     if (keys['a'] || keys['arrowleft']) steering = -1;
     if (keys['d'] || keys['arrowright']) steering = 1;
+
+    // Steering becomes less sensitive at high speeds
+    const speedFactor = THREE.MathUtils.clamp(speed / 220, 0, 1);
+
+    const steeringPower = THREE.MathUtils.lerp(
+      1,
+      0.55,
+      speedFactor
+    );
+
+steering *= steeringPower;
 
     // ------------------------------------
     // UPDATE RACING SOUNDS
