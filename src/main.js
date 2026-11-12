@@ -1,5 +1,6 @@
-
 import * as THREE from 'three';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
 // ------------------------------------
 // NEON RACER 3D - GAME ENGINE
@@ -33,6 +34,21 @@ renderer.toneMappingExposure = 1.2;
 
 document.querySelector('#game').prepend(renderer.domElement);
 
+// REALISTIC ENVIRONMENT REFLECTIONS
+const pmremGenerator = new THREE.PMREMGenerator(renderer);
+
+const environment = new RoomEnvironment();
+
+const environmentMap = pmremGenerator.fromScene(
+  environment,
+  0.04
+).texture;
+
+scene.environment = environmentMap;
+
+environment.dispose();
+pmremGenerator.dispose();
+
 // ------------------------------------
 // LIGHTING
 // ------------------------------------
@@ -58,8 +74,12 @@ const roadMaterial = new THREE.MeshStandardMaterial({
   metalness: 0.15
 });
 
-const lineMaterial = new THREE.MeshBasicMaterial({
-  color: 0x00eaff
+const lineMaterial = new THREE.MeshStandardMaterial({
+  color: 0xeaf4ff,
+  emissive: 0x8abfff,
+  emissiveIntensity: 0.7,
+  roughness: 0.35,
+  metalness: 0.15
 });
 
 const pinkMaterial = new THREE.MeshBasicMaterial({
@@ -79,13 +99,55 @@ const buildingMaterials = [
 // ------------------------------------
 // ROAD - NEON HIGHWAY
 // ------------------------------------
+// REALISTIC ASPHALT ROAD TEXTURE
+const asphaltCanvas = document.createElement('canvas');
+asphaltCanvas.width = 512;
+asphaltCanvas.height = 2048;
+
+const asphaltContext = asphaltCanvas.getContext('2d');
+
+// Dark asphalt base
+asphaltContext.fillStyle = '#171a20';
+asphaltContext.fillRect(0, 0, 512, 2048);
+
+// Small asphalt grains
+for (let i = 0; i < 12000; i++) {
+  const shade = Math.floor(Math.random() * 45) + 35;
+
+  asphaltContext.fillStyle =
+    `rgb(${shade}, ${shade}, ${shade + 5})`;
+
+  const x = Math.random() * 512;
+  const y = Math.random() * 2048;
+  const size = Math.random() * 2;
+
+  asphaltContext.fillRect(x, y, size, size);
+}
+
+// Subtle road surface streaks
+for (let i = 0; i < 35; i++) {
+  asphaltContext.strokeStyle = 'rgba(130, 145, 165, 0.08)';
+  asphaltContext.lineWidth = Math.random() * 2;
+
+  const x = Math.random() * 512;
+
+  asphaltContext.beginPath();
+  asphaltContext.moveTo(x, 0);
+  asphaltContext.lineTo(x + Math.random() * 10, 2048);
+  asphaltContext.stroke();
+}
+
+const asphaltTexture = new THREE.CanvasTexture(asphaltCanvas);
+asphaltTexture.colorSpace = THREE.SRGBColorSpace;
+asphaltTexture.anisotropy = renderer.capabilities.getMaxAnisotropy();
 
 const road = new THREE.Mesh(
   new THREE.PlaneGeometry(15, 240),
   new THREE.MeshStandardMaterial({
-    color: 0x090d19,
-    roughness: 0.32,
-    metalness: 0.65
+    map: asphaltTexture,
+    color: 0xffffff,
+    roughness: 0.48,
+    metalness: 0.22
   })
 );
 
@@ -154,7 +216,7 @@ const laneMarkers = [];
 for (const x of [-2.5, 2.5]) {
   for (let i = 0; i < 30; i++) {
     const marker = new THREE.Mesh(
-      new THREE.BoxGeometry(0.07, 0.025, 2.5),
+      new THREE.BoxGeometry(0.12, 0.018, 3.2),
       new THREE.MeshBasicMaterial({
         color: 0xd6e7ff
       })
@@ -441,8 +503,16 @@ function createCar(color, isPlayer = false) {
 
   // HELPER TO CREATE CAR PARTS
   function addBox(width, height, depth, material, x, y, z) {
+    const radius = Math.min(width, height, depth) * 0.2;
+
     const mesh = new THREE.Mesh(
-      new THREE.BoxGeometry(width, height, depth),
+      new RoundedBoxGeometry(
+        width,
+        height,
+        depth,
+        3,
+        radius
+      ),
       material
     );
 
@@ -562,6 +632,37 @@ function createCar(color, isPlayer = false) {
 
     headlight.rotation.z = side * -0.08;
   }
+  // REALISTIC HEADLIGHT BEAMS
+  for (const side of [-1, 1]) {
+
+    const beam = new THREE.SpotLight(
+      0xddeeff,
+      45,
+      55,
+      Math.PI / 5,
+      0.5,
+      2
+    );
+
+    beam.position.set(
+      side * 0.63,
+      0.78,
+      -2.15
+    );
+
+    const target = new THREE.Object3D();
+
+    target.position.set(
+      side * 0.63,
+      0.2,
+      -30
+    );
+
+    car.add(beam);
+    car.add(target);
+
+    beam.target = target;
+  }
 
   // REAR BUMPER
   addBox(
@@ -618,6 +719,9 @@ function createCar(color, isPlayer = false) {
 
       wheelGroup.position.set(x, 0.43, z);
 
+      // identify front wheels
+      wheelGroup.userData.isFront = z <0;
+
       // Rubber tyre
       const tyre = new THREE.Mesh(
         new THREE.CylinderGeometry(0.42, 0.42, 0.27, 32),
@@ -646,6 +750,32 @@ function createCar(color, isPlayer = false) {
         new THREE.CylinderGeometry(0.1, 0.1, 0.3, 16),
         chromeMaterial
       );
+      // BRAKE DISC
+      const brakeDisc = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.24, 0.24, 0.045, 32),
+        new THREE.MeshStandardMaterial({
+          color: 0x777777,
+          metalness: 0.9,
+          roughness: 0.3
+        })
+      );
+
+      brakeDisc.rotation.z = Math.PI / 2;
+      brakeDisc.position.x = 0.08;
+      wheelGroup.add(brakeDisc);
+
+      // RED BRAKE CALIPER
+      const brakeCaliper = new THREE.Mesh(
+        new THREE.BoxGeometry(0.1, 0.22, 0.14),
+        new THREE.MeshStandardMaterial({
+          color: 0xff2020,
+          metalness: 0.5,
+          roughness: 0.3
+        })
+      );
+
+brakeCaliper.position.set(0.13, 0.13, 0.12);
+wheelGroup.add(brakeCaliper);
 
       hub.rotation.z = Math.PI / 2;
       wheelGroup.add(hub);
@@ -926,6 +1056,21 @@ function startGame() {
   steering = 0;
   spawnTimer = 0;
 
+  // RESET NITRO
+nitro = 100;
+nitroActive = false;
+nitroCooldown = false;
+
+nitroFlames.visible = false;
+nitroGlow.intensity = 0;
+
+speedStreaks.forEach(streak => {
+  streak.visible = false;
+});
+
+nitroFill.style.width = '100%';
+nitroValue.textContent = '100%';
+
   player.position.set(0, 0, 4);
   player.rotation.set(0, 0, 0);
 
@@ -1000,21 +1145,48 @@ function animate() {
     speed -= 45 * delta;
   }
 
-  // NITRO BOOST
-  nitroActive = keys['shift'] && nitro > 0 && speed > 20;
+// NITRO BOOST
+nitroActive =
+  keys['shift'] &&
+  nitro > 0 &&
+  speed > 20 &&
+  !nitroCooldown;
 
-  if (nitroActive) {
-    speed += 75 * delta;
-    nitro -= NITRO_DRAIN * delta;
-  } else {
-    nitro += NITRO_RECHARGE * delta;
+if (nitroActive) {
+  speed += 75 * delta;
+
+  nitro = Math.max(
+    0,
+    nitro - NITRO_DRAIN * delta
+  );
+
+  // Activate cooldown when nitro is empty
+  if (nitro === 0) {
+    nitroCooldown = true;
+    nitroActive = false;
   }
 
-  nitro = THREE.MathUtils.clamp(nitro, 0, 100);
+} else {
+  // Recharge nitro
+  nitro = Math.min(
+    100,
+    nitro + NITRO_RECHARGE * delta
+  );
+
+  // Unlock boost after reaching 30%
+  if (nitroCooldown && nitro >= 30) {
+    nitroCooldown = false;
+  }
+}
+
+nitro = THREE.MathUtils.clamp(nitro, 0, 100);
 
     // UPDATE NITRO DISPLAY
-  nitroFill.style.width = `${nitro}%`;
-  nitroValue.textContent = `${Math.floor(nitro)}%`;
+nitroFill.style.width = `${nitro}%`;
+
+nitroValue.textContent = nitroCooldown
+  ? 'RECHARGING'
+  : `${Math.floor(nitro)}%`;
 
   // SHOW FLAMES DURING BOOST
   nitroFlames.visible = nitroActive;
@@ -1123,9 +1295,22 @@ function animate() {
       delta
     );
 
-    // Wheels
+    // REALISTIC WHEEL MOVEMENT
     playerData.wheels.forEach(wheel => {
+
+      // Rotate wheels while driving
       wheel.rotation.x -= speed * delta * 0.015;
+
+      // Front wheels turn when steering
+      if (wheel.userData.isFront) {
+        wheel.rotation.y = THREE.MathUtils.damp(
+          wheel.rotation.y,
+          -steering * 0.35,
+          8,
+          delta
+        );
+      }
+
     });
 
     // Road movement
