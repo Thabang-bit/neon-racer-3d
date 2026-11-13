@@ -25,8 +25,8 @@ const renderer = new THREE.WebGLRenderer({
 });
 
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
-renderer.shadowMap.enabled = true;
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1));
+renderer.shadowMap.enabled = false;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -868,60 +868,6 @@ player.add(nitroFlames);
       life: 0
     });
   }
-  // TYRE SMOKE DURING DRIFT
-  if (Math.abs(lateralVelocity) > 0.8 && speed > 45) {
-
-    for (const side of [-1, 1]) {
-
-      const particle = tyreSmoke.find(p => p.life <= 0);
-
-      if (particle) {
-        particle.life = 1;
-
-        particle.mesh.visible = true;
-
-        particle.mesh.position.set(
-          player.position.x + side * 1.02,
-          0.2,
-          player.position.z + 1.2
-        );
-
-        particle.mesh.scale.setScalar(0.5);
-
-        particle.mesh.material.opacity = 0.45;
-      }
-    }
-  }
-  // UPDATE TYRE SMOKE
-  tyreSmoke.forEach(particle => {
-
-    if (particle.life > 0) {
-
-      particle.life -= delta * 0.8;
-
-      // Smoke rises slowly
-      particle.mesh.position.y += delta * 0.7;
-
-      // Smoke spreads out
-      particle.mesh.position.x +=
-        (Math.random() - 0.5) * delta * 0.8;
-
-      // Smoke grows as it fades
-      const smokeSize = 0.5 + (1 - particle.life) * 1.8;
-
-      particle.mesh.scale.setScalar(smokeSize);
-
-      // Fade out
-      particle.mesh.material.opacity =
-        particle.life * 0.45;
-
-      if (particle.life <= 0) {
-        particle.mesh.visible = false;
-        particle.mesh.material.opacity = 0;
-      }
-    }
-
-  });
 
   // BLUE NITRO GLOW
   const nitroGlow = new THREE.PointLight(0x00aaff, 0, 9);
@@ -1398,6 +1344,56 @@ steering *= steeringPower;
 
     playerX = THREE.MathUtils.clamp(playerX, -5.3, 5.3);
 
+    // TYRE SMOKE DURING DRIFT
+    if (Math.abs(lateralVelocity) > 0.8 && speed > 45) {
+
+      for (const side of [-1, 1]) {
+
+        const particle = tyreSmoke.find(p => p.life <= 0);
+
+        if (particle) {
+          particle.life = 1;
+          particle.mesh.visible = true;
+
+          particle.mesh.position.set(
+            player.position.x + side * 1.02,
+            0.2,
+            player.position.z + 1.2
+          );
+
+          particle.mesh.scale.setScalar(0.5);
+          particle.mesh.material.opacity = 0.45;
+        }
+      }
+    }
+
+    // UPDATE TYRE SMOKE
+    tyreSmoke.forEach(particle => {
+
+      if (particle.life > 0) {
+
+        particle.life -= delta * 0.8;
+
+        particle.mesh.position.y += delta * 0.7;
+
+        particle.mesh.position.x +=
+          (Math.random() - 0.5) * delta * 0.8;
+
+        const smokeSize = 0.5 + (1 - particle.life) * 1.8;
+
+        particle.mesh.scale.setScalar(smokeSize);
+
+        particle.mesh.material.opacity =
+          Math.max(0, particle.life) * 0.45;
+
+        if (particle.life <= 0) {
+          particle.mesh.visible = false;
+          particle.mesh.material.opacity = 0;
+        }
+      }
+
+    });
+
     player.position.x = THREE.MathUtils.damp(
       player.position.x,
       playerX,
@@ -1566,5 +1562,5 @@ window.addEventListener('resize', () => {
   camera.updateProjectionMatrix();
 
   renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 0.7));
 });
